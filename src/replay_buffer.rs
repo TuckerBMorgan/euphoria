@@ -1,6 +1,64 @@
 use ndarray::prelude::*;
 use rand::prelude::*;
 
+
+#[derive(Clone, Copy, Default)]
+pub struct GenericMemory<S: Default + Clone, A: Default + Clone, R: Default + Clone, D: Default + Clone> {
+    state: S,
+    action: A,
+    reward: R,
+    next_state: S,
+    done: D,
+}
+
+impl<S: Default + Clone, A: Default + Clone, R: Default + Clone, D: Default + Clone> GenericMemory<S, A, R, D> {
+    pub fn new(state: S, action: A, reward: R, next_state: S, done: D) -> GenericMemory<S, A, R, D> {
+        GenericMemory {
+            state,
+            action,
+            reward,
+            next_state,
+            done
+        }
+    }
+}
+
+pub struct GenericMemoryBuffer<S: Default + Clone, A: Default + Clone, R: Default + Clone, D: Default + Clone> {
+    memories: Vec<GenericMemory<S, A, R, D>>,
+    capacity: usize,
+    number_of_added_memories: usize
+}
+
+impl<S: Default + Clone, A: Default + Clone, R: Default + Clone, D: Default + Clone> GenericMemoryBuffer<S, A, R, D> {
+    pub fn new(capacity: usize) -> GenericMemoryBuffer<S, A, R, D> {
+        GenericMemoryBuffer {
+            memories: vec![Default::default(); capacity],
+            capacity,
+            number_of_added_memories: 0
+        }
+    }
+
+    pub fn add_memory(&mut self, memory: GenericMemory<S, A, R, D>) {
+        self.memories[self.number_of_added_memories % self.capacity] = memory; 
+    }
+
+    pub fn sample_batch(&self, sample_size: usize) -> Vec<&GenericMemory<S, A, R, D>> {
+        let mut rng = rand::thread_rng();
+        let mut terrible = vec![];
+
+        for _ in 0..sample_size {
+            terrible.push(rng.gen_range(0, self.number_of_added_memories.min(self.capacity)));            
+        }
+        let mut memories = vec![];
+        for index in terrible {
+            memories.push(&self.memories[index]);
+        }
+        return memories;
+    }
+}
+
+
+
 pub struct Memory {
     states: Array2<f32>,
     actions: Array2<f32>,
