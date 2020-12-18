@@ -2,18 +2,18 @@ use ndarray::prelude::*;
 use tsuga::prelude::*;
 use crate::replay_buffer::*;
 
-pub struct ActorCriticNetwork {
-    actor_network: FullyConnectedNetwork,
-    critic_network: FullyConnectedNetwork,
+pub struct DiscreteSpaceNetwork {
+    target_network: FullyConnectedNetwork,
+    live_network: FullyConnectedNetwork,
     memory_buffer: GenericMemoryBuffer
     //optimize network
 }
 
-impl ActorCriticNetwork {
-    pub fn new(actor_network: FullyConnectedNetwork, critic_network: FullyConnectedNetwork) -> ActorCriticNetwork {
-        ActorCriticNetwork {
-            actor_network,
-            critic_network,
+impl DiscreteSpaceNetwork {
+    pub fn new(live_network: FullyConnectedNetwork, target_network: FullyConnectedNetwork) -> DiscreteSpaceNetwork {
+        DiscreteSpaceNetwork {
+            target_network,
+            live_network,
             memory_buffer: GenericMemoryBuffer::new(10_000)
         }
     }
@@ -22,8 +22,8 @@ impl ActorCriticNetwork {
         self.memory_buffer.add_memory(memory);
     }
 
-    pub fn predict(&mut self, input: Array2<f32>) -> (Array2<f32>, Array2<f32>) {
-        return self.actor_network.predict(input);
+    pub fn predict(&mut self, input: Array2<f32>) -> Array2<f32> {
+        return self.live_network.predict(input);
     }
 
     pub fn number_of_collected_memories(&self) -> usize {
@@ -36,9 +36,9 @@ impl ActorCriticNetwork {
         for memory in memories {
             
             let mut rewards_of_actions = self.live_network.predict(memory.state.clone());
-            
+            println!("{:?}", memory.next_state.clone());
             let rewards_of_possible_next_state = self.target_network.predict(memory.next_state.clone());
-
+            println!("{:?}", rewards_of_possible_next_state);
             if memory.done == true {
                 rewards_of_actions[[0, memory.action]] = memory.reward;
             } else {
@@ -46,5 +46,10 @@ impl ActorCriticNetwork {
             }
             self.live_network.single_training_batch(memory.state.clone(), rewards_of_actions, 1);
         }
+    }
+
+    pub fn set_target_network_to_q_network(&mut self) {
+        //        self.live_network.blind_copy(&mut self.target_network);
+        self.live_network.blind_copy_with_polyyak(&mut self.target_network, 0.995);
     }
 }
