@@ -36,9 +36,7 @@ impl DiscreteSpaceNetwork {
         for memory in memories {
             
             let mut rewards_of_actions = self.live_network.predict(memory.state.clone());
-            println!("{:?}", memory.next_state.clone());
             let rewards_of_possible_next_state = self.target_network.predict(memory.next_state.clone());
-            println!("{:?}", rewards_of_possible_next_state);
             if memory.done == true {
                 rewards_of_actions[[0, memory.action]] = memory.reward;
             } else {
@@ -49,7 +47,7 @@ impl DiscreteSpaceNetwork {
     }
 
     pub fn set_target_network_to_q_network(&mut self) {
-        //        self.live_network.blind_copy(&mut self.target_network);
-        self.live_network.blind_copy_with_polyyak(&mut self.target_network, 0.995);
+                self.live_network.blind_copy(&mut self.target_network);
+     //   self.live_network.blind_copy_with_polyyak(&mut self.target_network, 0.995);
     }
 }

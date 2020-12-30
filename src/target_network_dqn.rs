@@ -46,6 +46,7 @@ impl TargetNetworkDQN {
             }
             self.live_network.single_training_batch(memory.state.clone(), rewards_of_actions, 1);
         }
+
     }
 
     pub fn set_target_network_to_q_network(&mut self) {
